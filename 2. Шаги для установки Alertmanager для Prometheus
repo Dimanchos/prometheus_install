@@ -1,0 +1,59 @@
+Создаем скрипт
+
+1. nano alertmanager.sh и вбиваем то ,что ниже,затем сохраняем
+
+
+
+#!/bin/bash
+#--------------------------------------------------------------------
+ALERTMANAGER_VERSION="0.27.0"
+#---------------------установка----------------------------------------------
+
+
+cd /tmp
+wget https://github.com/prometheus/alertmanager/releases/download/v$ALERTMANAGER_VERSION/alertmanager-$ALERTMANAGER_VERSION.linux-amd64.tar.gz
+tar xvfz alertmanager-$ALERTMANAGER_VERSION.linux-amd64.tar.gz
+cd alertmanager-$ALERTMANAGER_VERSION.linux-amd64
+mkdir /etc/alertmanager
+mkdir /etc/alertmanager/data
+mv * /etc/alertmanager/
+rm -rf /tmp/alertmanager*
+
+
+2. Делаем файл исполняемым 
+
+    chmod +x alertmanager.sh
+
+
+3. Запускаем его
+
+    ./alertmanager.sh
+
+4. Создаем процесс, который будет запускать наш алертменеджер, с заданными настройками, которые включает сам исполняемый файл, его конфигурационный файл, и место хранения БД. После добавления -сохраняемся.
+
+nano /etc/systemd/system/prometheus-alertmanager.service
+
+
+[Unit]
+Description=alermanager
+Wants=network-online.target
+After=network-online.target
+[Service]
+ExecStart=/etc/alertmanager/alertmanager \
+    --config.file /etc/alertmanager/alertmanager.yml \
+    --storage.path /etc/alertmanager/data
+
+
+Restart=always
+[Install]
+WantedBy=multi-user.target
+
+
+5. Запускаем алертменеджер как службу, добавляет его в автозапуск и проверяем его работоспособность .
+
+
+systemctl daemon-reload
+systemctl start prometheus-alertmanager.service
+systemctl enable prometheus-alertmanager.service
+systemctl status prometheus-alertmanager.service
+
