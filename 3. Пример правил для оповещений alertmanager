@@ -1,0 +1,50 @@
+1/ Cоздаем конф. файл в корне prometheus, копируем и сохраняемся
+
+nano /etc/prometheus/alert.rules.yml
+
+groups:
+- name: alert.rules
+  rules:
+  - alert: 'Устройство упало =('
+   # Condition for alerting
+    expr: up == 0
+    for: 1m
+   # Annotation - additional informational labels to store more information
+    annotations:
+      Info: '{{ $labels.instance }} задания {{ $labels.job }} упало более 1 минуты назад.'
+#      summary: 'Instance {{ $labels.job }} down'
+ #     title: 'Instance {{ $labels.instance }} down'
+   # Labels - additional labels to be attached to the alert
+#    labels:
+ #       severity: 'critical'
+  - alert: 'Процессору жарко'
+    expr : cputemp > 50
+    for : 1m
+    annotations:
+      Info: '{{ $labels.instance }} задания {{ $labels.job }}  температура > 50, охлади меня пожалуйста'
+
+2. Далее нам надо добавить наши правила alert.rules.yml в основной конфигурационный файл prometheus и добавить туда сам установленный alertmanager,нужная часть конфигурации выделенная красным цветом.
+
+
+global:
+  scrape_interval: 5m # Set the scrape interval to every 5 minutes Default is every 1 minute.
+
+rule_files:
+  - alert.rules.yml
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+      - 'localhost:9093'
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+3.Перезапускаем наши службы
+
+ systemctl restart prometheus
+
+systemctl restart prometheus-alertmanager.service
+
