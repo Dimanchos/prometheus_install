@@ -1,0 +1,49 @@
+Создаем скрипт
+
+1. nano snmp.sh и вбиваем то ,что ниже,затем сохраняем
+
+#!/bin/bash
+#--------------------------------------------------------------------
+
+SNMP_EXPORTER_VERSION="0.26.0"
+
+cd /tmp
+wget https://github.com/prometheus/snmp_exporter/releases/download/v$SNMP_EXPORTER_VERSION/snmp_exporter-$SNMP_EXPORTER_VERSION.linux-amd64.tar.gz
+tar xvfz snmp_exporter-$SNMP_EXPORTER_VERSION.linux-amd64.tar.gz
+cd snmp_exporter-$SNMP_EXPORTER_VERSION.linux-amd64
+
+mkdir /etc/snmp_exporter/
+
+mv * /etc/snmp_exporter/
+rm -rf /tmp/snmp_exporter*
+
+2.Далее делаем исполняемым 
+
+chmod+x snmp.sh
+
+3.Запускаем
+
+./snmp.sh
+
+4. Создаем процесс, который будет запускать наш snmp_exporter с заданными настройками, которые включает сам исполняемый файл, его конфигурационный файл, и место хранения БД. После добавления -сохраняемся.
+
+nano /etc/systemd/system/snmp_exporter.service
+
+[Unit]
+Description=SNMP Exporter
+Wants=network-online.target
+After=network-online.target
+[Service]
+ExecStart=/etc/snmp_exporter/snmp_exporter --config.file=/etc/snmp_exporter/snmp.yml
+Restart=always
+[Install]
+WantedBy=multi-user.target
+
+5. Запускаем snmp exporter как службу, добавляет его в автозапуск и проверяем его работоспособность .
+
+systemctl daemon-reload
+systemctl start snmp_exporter.service
+systemctl enable snmp_exporter.service
+systemctl status snmp_exporter.service
+
+6. Добавление SNMP устройств в конфигурацию Prometheus Server указана здесь
