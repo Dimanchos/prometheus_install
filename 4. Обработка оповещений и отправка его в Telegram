@@ -1,0 +1,100 @@
+1. Для начала поставим prometheus bot, который с помощью webhook`а alertmanager`а  будет отправлять нужные уведомления в telegram, но перед этим поставим нужные пакеты для работы
+
+sudo apt update
+
+sudo apt install git golang make
+
+2. Далее копируем с репозитория бота , и преобразуем с помощью make
+
+cd /etc
+git clone https://github.com/inCaller/prometheus_bot.git
+cd prometheus_bot*
+#Здесь указываем путь к  бинарнику GoLang
+export GOPATH="/usr/lib/go" 
+make clean
+make
+
+3.  Создаем здесь себе нового телеграм бота и забираем его токен.
+4. Cоздаем конфигурационный файл для нашего prometheus bot, и вбиваем туда наш токен, шаблоны в свою очередь дает более тонкую настройку выдачи оповещений.
+nano /etc/prometheus_bot/config.yaml
+ 
+telegram_token: "7233200334:AAHSEOYa0x4kl82-5QBpkM9XPnPCILdYgTw" #наш токен, полученный от BotFather
+time_outdata: "02/01/2006 15:04:05" # формат даты
+template_path: "/etc/prometheus_bot/testdata/production_example.tmpl # если используешь шаблон
+time_zone: "Europe/Moscow" 
+split_msg_byte: 4000
+#send_only: true # use bot only to send messages.
+
+5. Запускаем бота в той директории ,где он находится 
+
+cd /etc/prometheus_bot/
+
+./prometheus_bot
+
+6. Создаем группу в telegram,добавляем бота и пишем любое сообщения используя / (например /123 ) , он выдаст нам chat id (например -4248192929)
+
+После этого  можно раскомментировать строчку  send_only из пункта 4,чтобы он не обрабатывал сообщения ,написанные в телеграмм группе.
+
+7. Экспортируем ChatID в PrometheusBot
+
+export TELEGRAM_CHATID="-4248192929D"
+make 
+
+8. Идем в ранее установленный Alermanager и редактируем наш конфигурационный файл.
+
+nano /etc/alertmanager/alertmanager.yml
+
+global:
+  resolve_timeout: 5m  
+route:
+  group_by: ['alertname']
+  group_wait: 30s
+  group_interval: 30s
+  repeat_interval: 5m
+  receiver: 'web.hook'
+receivers:
+- name: 'web.hook'
+  webhook_configs:
+  - url: http://127.0.0.1:9087/alert/-4248192929 # где  -4248192929 Сhat id
+
+9. Пример  простого шаблона для Prometheus bot 
+
+nano /etc/prometheus_bot/testdata/production_example.tmpl
+
+{{ $length := len .GroupLabels -}} {{ if ne $length 0 }}
+<b>Problem!:</b>
+{{ range $key,$val := .GroupLabels -}}
+    {{$key}} = <code>{{$val}}</code>
+{{ end -}}
+{{ end -}}
+<b></b>
+<b>Active Alert List:</b>
+{{- range $val := .Alerts }}
+  Alert check: http://grafana.r2d.local:3000/dashboards <a href="{{ $val.GeneratorURL }}">{{ index $val.Annotations "name" }}</a>
+  {{ range $key, $value := $val.Annotations -}}
+  {{ if and (and (ne $key "name") (ne $key "value")) (ne $key "measureUnit") }}
+  {{$key}}: {{$value}}
+  {{- end -}}
+{{- end -}}
+{{- end -}}
+
+10. Создаем процесс, который будет запускать наш алертменеджер, с заданными настройками, которые включает сам исполняемый файл, его конфигурационный файл, и место хранения БД. После добавления -сохраняемся.
+
+nano /etc/systemd/system/prometheus_bot.service
+
+[Unit]
+Description=prometheus bot
+Wants=network-online.target
+After=network-online.target
+[Service]
+ExecStart=/etc/prometheus_bot/prometheus_bot \
+-c /etc/prometheus_bot/config.yaml
+Restart=always
+[Install]
+WantedBy=multi-user.target
+
+11. Запускаем бота как службу, добавляет его в автозапуск и проверяем его работоспособность .
+systemctl daemon-reload
+systemctl start prometheus_bot.service
+systemctl enable prometheus_bot.service
+systemctl status prometheus_bot.service
