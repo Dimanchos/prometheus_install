@@ -6,7 +6,7 @@
 
 
 
-Открываем наш конфигурационный файл prometheus, добавленная цель  linux node будет отмечена красным цветом, a snmp -зеленым
+Открываем наш конфигурационный файл prometheus, добавляем цель для linux node и для snmp_device
 
 nano /etc/prometheus/prometheus.yml
 
