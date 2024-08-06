@@ -18,7 +18,7 @@ make
 4. Cоздаем конфигурационный файл для нашего prometheus bot, и вбиваем туда наш токен, шаблоны в свою очередь дает более тонкую настройку выдачи оповещений.
 nano /etc/prometheus_bot/config.yaml
  
-telegram_token: "7233200334:AAHSEOYa0x4kl82-5QBpkM9XPnPCILdYgTw" #наш токен, полученный от BotFather
+telegram_token: "7233200334:AAHSEdx240x4kl82-5QBpkrvjinPCILznntTw" #наш токен, полученный от BotFather
 time_outdata: "02/01/2006 15:04:05" # формат даты
 template_path: "/etc/prometheus_bot/testdata/production_example.tmpl # если используешь шаблон
 time_zone: "Europe/Moscow" 
@@ -37,7 +37,7 @@ cd /etc/prometheus_bot/
 
 7. Экспортируем ChatID в PrometheusBot
 
-export TELEGRAM_CHATID="-4248192929D"
+export TELEGRAM_CHATID="-4255192929D"
 make 
 
 8. Идем в ранее установленный Alermanager и редактируем наш конфигурационный файл.
@@ -55,7 +55,7 @@ route:
 receivers:
 - name: 'web.hook'
   webhook_configs:
-  - url: http://127.0.0.1:9087/alert/-4248192929 # где  -4248192929 Сhat id
+  - url: http://127.0.0.1:9087/alert/-4255192929 # где  -4248192929 Сhat id
 
 9. Пример  простого шаблона для Prometheus bot 
 
